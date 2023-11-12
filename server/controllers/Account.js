@@ -56,9 +56,42 @@ const signup = async (req, res) => {
   }
 };
 
+const changePassword = async (req, res) => {
+  const username = `${req.body.username}`;
+  const currpass = `${req.body.currpass}`;
+  const pass = `${req.body.pass}`;
+  const pass2 = `${req.body.pass2}`;
+
+  if (!username || !currpass || !pass || !pass2) {
+    return res.status(400).json({ error: 'All fields are required!' });
+  }
+
+  if (pass !== pass2) {
+    return res.status(400).json({ error: 'Passwords do not match!' });
+  }
+
+  return Account.authenticate(username, currpass, async (err, account) => {
+    if (err || !account) {
+      return res.status(401).json({ error: 'Wrong username or password!' });
+    }
+
+    try {
+      const hash = await Account.generateHash(pass);
+      const acc = account;
+      acc.password = hash;
+      await acc.save();
+      return res.json({ redirect: '/maker' });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: 'An error occured!' });
+    }
+  });
+};
+
 module.exports = {
   loginPage,
   login,
   logout,
   signup,
+  changePassword,
 };
